@@ -14,6 +14,7 @@ C_DEFS =  \
 PREFIX = /opt/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)gcc -x assembler-with-cpp
+AR = $(PREFIX)ar rcs
 CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
 BIN = $(CP) -O binary -S
@@ -93,12 +94,12 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
 #######################################
 # list of objects
 SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
-C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
 S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
+C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
 
-OBJS  = $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
-OBJS += $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
-OBJS += $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
+SDK_OBJ  = $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
+SDK_OBJ += $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
+OBJS  = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
 
 vpath %.c $(sort $(dir $(SDK_SRC) $(C_SRC)))
 vpath %.S $(sort $(dir $(S_SRC)))
@@ -108,10 +109,14 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(MKSUNXI) $@
 	@echo building $(notdir $(<:.elf=.bin))
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJS) Makefile
-	@$(CC) $(OBJS) $(LDFLAGS) -o $@
+$(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJS) Makefile
+	@$(CC) $(OBJS) $(LDFLAGS) -o $@ $(BUILD_DIR)/libsdk.a
 	@echo Linking...
 	@$(SZ) $@
+	
+$(BUILD_DIR)/libsdk.a: $(SDK_OBJ) Makefile
+	@echo Build libsdk.a
+	@$(AR) $@ $(SDK_OBJ)
 
 $(BUILD_DIR)/%.o: %.S Makefile | $(BUILD_DIR)
 	@$(AS) $(ASFLAGS) $(MCFLAGS) -MF"$(@:%.o=%.d)" -MT $@ -c $< -o $@

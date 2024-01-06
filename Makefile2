@@ -38,27 +38,17 @@ SDK_DIR = \
 	third_party/rt-thread/components/libc/compilers/newlib \
 	third_party/rt-thread/libcpu/f1c100s \
 	third_party/rt-thread/src
-SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
-SDK_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
 
 C_DIR = \
 	dsp/source/**/src \
 	hardware/src \
 	system/src \
 	user
-C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
-C_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
 
 # ASM sources
-S_SRC = \
-	bootloader/memcmp.S \
-	bootloader/memcpy.S \
-	bootloader/memset.S \
-	bootloader/start_gcc.S \
-	third_party/rt-thread/libcpu/f1c100s/context_gcc.S
-S_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
-
-OBJS = $(C_OBJ) $(S_OBJ)
+S_DIR = \
+	bootloader \
+	third_party/rt-thread/libcpu/f1c100s
 
 # AS includes
 AS_INCLUDES = 
@@ -103,6 +93,13 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
 # build the application
 #######################################
 # list of objects
+SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
+S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
+C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
+
+SDK_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
+SDK_OBJ		+=	$(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
+OBJS		:=	$(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
 
 SDK_OBJ_DIR 	= $(sort $(dir $(SDK_OBJ)))
 $(SDK_OBJ_DIR):
