@@ -4,25 +4,26 @@ BUILD_DIR = output
 CPU = -mcpu=arm926ej-s
 FPU =
 FLOAT-ABI = -mfloat-abi=soft
-LDSCRIPT = user/link.lds
+LDSCRIPT = user/link2.lds
 AS_DEFS = 
 C_DEFS =  \
--D__ARM32_ARCH__=5 \
--D__ARM926EJS__ \
--D_POSIX_C_SOURCE
+	-D__ARM32_ARCH__=5 \
+	-D__ARM926EJS__ \
+	-D_POSIX_C_SOURCE
 
 PREFIX = /opt/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)gcc -x assembler-with-cpp
+AR = $(PREFIX)ar rcs
 CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
 BIN = $(CP) -O binary -S
 ifdef OS
-   RM = rmdir /Q /S
+	RM = rmdir /Q /S
 else
-   ifeq ($(shell uname), Linux)
-      RM = rm -r
-   endif
+	ifeq ($(shell uname), Linux)
+		RM = rm -r
+	endif
 endif
 
 ######################################
@@ -37,17 +38,27 @@ SDK_DIR = \
 	third_party/rt-thread/components/libc/compilers/newlib \
 	third_party/rt-thread/libcpu/f1c100s \
 	third_party/rt-thread/src
+SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
+SDK_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
 
 C_DIR = \
 	dsp/source/**/src \
 	hardware/src \
 	system/src \
 	user
+C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
+C_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
 
 # ASM sources
-S_DIR = \
-	bootloader \
-	third_party/rt-thread/libcpu/f1c100s
+S_SRC = \
+	bootloader/memcmp.S \
+	bootloader/memcpy.S \
+	bootloader/memset.S \
+	bootloader/start_gcc.S \
+	third_party/rt-thread/libcpu/f1c100s/context_gcc.S
+S_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
+
+OBJS = $(C_OBJ) $(S_OBJ)
 
 # AS includes
 AS_INCLUDES = 
@@ -92,26 +103,29 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
 # build the application
 #######################################
 # list of objects
-SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
-C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
-S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
 
-OBJS  = $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
-OBJS += $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
-OBJS += $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
+SDK_OBJ_DIR 	= $(sort $(dir $(SDK_OBJ)))
+$(SDK_OBJ_DIR):
+	@mkdir -p $@
 
-vpath %.c $(sort $(dir $(SDK_SRC) $(C_SRC)))
-vpath %.S $(sort $(dir $(S_SRC)))
+OBJ_DIR 	= $(sort $(dir $(OBJS)))
+$(OBJ_DIR):
+	@mkdir -p $@
 	
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(BIN) $< $@	
 	@$(MKSUNXI) $@
 	@echo building $(notdir $(<:.elf=.bin))
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJS) Makefile
-	@$(CC) $(OBJS) $(LDFLAGS) -o $@
+$(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJ_DIR) $(OBJS)
+	@echo Start link
+	$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/libsdk.a -o $@
 	@echo Linking...
 	@$(SZ) $@
+	
+$(BUILD_DIR)/libsdk.a: $(SDK_OBJ_DIR) $(SDK_OBJ)
+	@echo Build libsdk.a
+	@$(AR) $@ $(SDK_OBJ)
 
 $(BUILD_DIR)/%.o: %.S Makefile | $(BUILD_DIR)
 	@$(AS) $(ASFLAGS) $(MCFLAGS) -MF"$(@:%.o=%.d)" -MT $@ -c $< -o $@
