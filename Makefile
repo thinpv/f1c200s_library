@@ -94,7 +94,7 @@ LIBS = -lgcc -lc -lnosys -lm -u _printf_float
 LIBDIR = 
 
 ASFLAGS	= -Xassembler -mimplicit-it=thumb -c
-LDFLAGS = $(MCU) -specs=nano.specs -T $(LDSCRIPT) $(LIBDIR) $(LIBS) -nostartfiles -Xlinker --gc-sections -Wl,--cref,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = $(MCU) -specs=nano.specs -T $(LDSCRIPT) $(LIBDIR) $(LIBS) -nostartfiles -Xlinker --gc-sections -Wl,--cref,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -zmuldefs
 MCFLAGS	= $(CPU) $(FPU) $(FLOAT-ABI) -std=gnu99 $(C_DEFS) -ffunction-sections -fdata-sections -Wall $(OPT) -MMD
 
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
@@ -125,7 +125,7 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 
 $(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJ_DIR) $(OBJS)
 	@echo Start link
-	@$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/libsdk.a -o $@ -zmuldefs
+	@$(CC) $(OBJS) $(LDFLAGS) $(BUILD_DIR)/libsdk.a -o $@
 	@echo Linking...
 	@$(SZ) $@
 

@@ -7,9 +7,9 @@ FLOAT-ABI = -mfloat-abi=soft
 LDSCRIPT = user/link2.lds
 AS_DEFS = 
 C_DEFS =  \
--D__ARM32_ARCH__=5 \
--D__ARM926EJS__ \
--D_POSIX_C_SOURCE
+	-D__ARM32_ARCH__=5 \
+	-D__ARM926EJS__ \
+	-D_POSIX_C_SOURCE
 
 PREFIX = /opt/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -19,11 +19,11 @@ CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
 BIN = $(CP) -O binary -S
 ifdef OS
-   RM = rmdir /Q /S
+	RM = rmdir /Q /S
 else
-   ifeq ($(shell uname), Linux)
-      RM = rm -r
-   endif
+	ifeq ($(shell uname), Linux)
+		RM = rm -r
+	endif
 endif
 
 ######################################
@@ -45,7 +45,6 @@ SDK_DIR = \
 	third_party/rt-thread/src
 
 C_DIR = \
-	dsp/source/**/src \
 	hardware/src \
 	system/src \
 	user \
@@ -67,7 +66,6 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES = \
 -Ibootloader \
--Idsp/include \
 -If1cx00s_lib/inc \
 -Ihardware/inc \
 -Imyresource/inc \
@@ -96,7 +94,7 @@ LIBS = -lgcc -lc -lnosys -lm -u _printf_float
 LIBDIR = 
 
 ASFLAGS	= -Xassembler -mimplicit-it=thumb -c
-LDFLAGS = $(MCU) -specs=nano.specs -T $(LDSCRIPT) $(LIBDIR) $(LIBS) -nostartfiles -Xlinker --gc-sections -Wl,--cref,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = $(MCU) -specs=nano.specs -T $(LDSCRIPT) $(LIBDIR) $(LIBS) -nostartfiles -Xlinker --gc-sections -Wl,--cref,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -zmuldefs
 MCFLAGS	= $(CPU) $(FPU) $(FLOAT-ABI) -std=gnu99 $(C_DEFS) -ffunction-sections -fdata-sections -Wall $(OPT) -MMD
 
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
@@ -121,7 +119,8 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@echo building $(notdir $(<:.elf=.bin))
 
 $(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJS) Makefile
-	@$(CC) $(OBJS) $(LDFLAGS) -o $@ $(BUILD_DIR)/libsdk.a -zmuldefs
+	@echo Start link
+	@$(CC) $(OBJS) $(LDFLAGS) $(BUILD_DIR)/libsdk.a -o $@
 	@echo Linking...
 	@$(SZ) $@
 
