@@ -110,9 +110,14 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@echo building $(notdir $(<:.elf=.bin))
 
 $(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJS) Makefile
-	@$(CC) $(OBJS) $(LDFLAGS) -o $@ $(BUILD_DIR)/libsdk.a
+	@$(CC) $(OBJS) $(LDFLAGS) -o $@ $(BUILD_DIR)/libsdk.a -zmuldefs
 	@echo Linking...
 	@$(SZ) $@
+
+build2: $(OBJS) $(SDK_OBJ) Makefile
+	$(CC) $(OBJS) $(SDK_OBJ) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET).elf
+	@echo Linking...
+	@$(SZ) $(BUILD_DIR)/$(TARGET).elf
 	
 $(BUILD_DIR)/libsdk.a: $(SDK_OBJ) Makefile
 	@echo Build libsdk.a
