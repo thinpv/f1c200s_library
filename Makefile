@@ -7,9 +7,9 @@ FLOAT-ABI = -mfloat-abi=soft
 LDSCRIPT = user/link.lds
 AS_DEFS = 
 C_DEFS =  \
--D__ARM32_ARCH__=5 \
--D__ARM926EJS__ \
--D_POSIX_C_SOURCE
+	-D__ARM32_ARCH__=5 \
+	-D__ARM926EJS__ \
+	-D_POSIX_C_SOURCE
 
 PREFIX = /opt/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -19,11 +19,11 @@ CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
 BIN = $(CP) -O binary -S
 ifdef OS
-   RM = rmdir /Q /S
+	RM = rmdir /Q /S
 else
-   ifeq ($(shell uname), Linux)
-      RM = rm -r
-   endif
+	ifeq ($(shell uname), Linux)
+		RM = rm -r
+	endif
 endif
 
 ######################################
@@ -97,20 +97,26 @@ SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
 S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
 C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
 
-SDK_OBJ  = $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
-SDK_OBJ += $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
-OBJS  = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
+SDK_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
+SDK_OBJ		+=	$(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
+OBJS		:=	$(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
 
-vpath %.c $(sort $(dir $(SDK_SRC) $(C_SRC)))
-vpath %.S $(sort $(dir $(S_SRC)))
+SDK_OBJ_DIR 	= $(sort $(dir $(SDK_OBJ)))
+$(SDK_OBJ_DIR):
+	@mkdir -p $@
+
+OBJ_DIR 	= $(sort $(dir $(OBJS)))
+$(OBJ_DIR):
+	@mkdir -p $@
 	
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(BIN) $< $@	
 	@$(MKSUNXI) $@
 	@echo building $(notdir $(<:.elf=.bin))
 
-$(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJS) Makefile
-	@$(CC) $(OBJS) $(LDFLAGS) -o $@ $(BUILD_DIR)/libsdk.a -zmuldefs
+$(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJ_DIR) $(OBJS)
+	@echo Start link
+	$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/libsdk.a -o $@ -zmuldefs
 	@echo Linking...
 	@$(SZ) $@
 
@@ -119,7 +125,7 @@ build2: $(OBJS) $(SDK_OBJ) Makefile
 	@echo Linking...
 	@$(SZ) $(BUILD_DIR)/$(TARGET).elf
 	
-$(BUILD_DIR)/libsdk.a: $(SDK_OBJ) Makefile
+$(BUILD_DIR)/libsdk.a: $(SDK_OBJ_DIR) $(SDK_OBJ)
 	@echo Build libsdk.a
 	@$(AR) $@ $(SDK_OBJ)
 

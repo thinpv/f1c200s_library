@@ -8,15 +8,15 @@ SECTIONS
 	__image_start = .;
 	.bootloader :
 	{		
-		output/bootloader/start_gcc.o 
-		output/bootloader/memcmp.o 
-		output/bootloader/memcpy.o 
-		output/bootloader/memset.o 
-		output/bootloader/sys-clock.o 
-		output/bootloader/sys-dram.o 
-		output/bootloader/sys-mmu.o 
-		output/bootloader/sys-spi-flash.o 
-		output/bootloader/sys-copyself.o		
+		output/start_gcc.o 
+		output/memcmp.o 
+		output/memcpy.o 
+		output/memset.o 
+		output/sys-clock.o 
+		output/sys-dram.o 
+		output/sys-mmu.o 
+		output/sys-spi-flash.o 
+		output/sys-copyself.o		
 	}
 	__bootloader_size = SIZEOF(.bootloader); 
 	
@@ -25,7 +25,7 @@ SECTIONS
 	__text_start = .;
 	.text :
 	{	
-		output/third_party/rt-thread/libcpu/f1c100s/context_gcc.o
+		output/context_gcc.o
 		*(.text)
 		*(.text.*)
 		KEEP(*(.fini))
