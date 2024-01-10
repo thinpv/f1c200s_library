@@ -29,6 +29,11 @@ endif
 ######################################
 # source
 ######################################
+# ASM sources
+S_DIR = \
+	bootloader \
+	third_party/rt-thread/libcpu/f1c100s
+
 # C sources
 SDK_DIR = \
 	bootloader \
@@ -43,12 +48,18 @@ C_DIR = \
 	dsp/source/**/src \
 	hardware/src \
 	system/src \
-	user
-
-# ASM sources
-S_DIR = \
-	bootloader \
-	third_party/rt-thread/libcpu/f1c100s
+	user \
+	myresource/src/** \
+	third_party/cherryusb/class/hub \
+	third_party/cherryusb/class/msc \
+	third_party/cherryusb/core \
+	third_party/cherryusb/osal \
+	third_party/cherryusb/port \
+	third_party/fatfs \
+	third_party/lvgl/lvgl/** \
+	third_party/lvgl/lvgl/**/** \
+	third_party/lvgl/lvgl/**/**/** \
+	third_party/lvgl/lvgl/**/**/**/**
 
 # AS includes
 AS_INCLUDES = 
@@ -93,13 +104,13 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
 # build the application
 #######################################
 # list of objects
-SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
-S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
-C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
+S_SRC = $(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
+SDK_SRC = $(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
+C_SRC = $(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
 
-SDK_OBJ  = $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
-SDK_OBJ += $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
-OBJS  = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
+SDK_OBJ = $(addprefix $(BUILD_DIR)/,$(notdir $(S_SRC:.S=.o)))
+SDK_OBJ += $(addprefix $(BUILD_DIR)/,$(notdir $(SDK_SRC:.c=.o)))
+OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SRC:.c=.o)))
 
 vpath %.c $(sort $(dir $(SDK_SRC) $(C_SRC)))
 vpath %.S $(sort $(dir $(S_SRC)))
@@ -115,7 +126,7 @@ $(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJS) Makefile
 	@$(SZ) $@
 
 build2: $(OBJS) $(SDK_OBJ) Makefile
-	$(CC) $(OBJS) $(SDK_OBJ) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET).elf
+	@$(CC) $(OBJS) $(SDK_OBJ) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET).elf
 	@echo Linking...
 	@$(SZ) $(BUILD_DIR)/$(TARGET).elf
 	

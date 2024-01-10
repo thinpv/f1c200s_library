@@ -29,6 +29,11 @@ endif
 ######################################
 # source
 ######################################
+# ASM sources
+S_DIR = \
+	bootloader \
+	third_party/rt-thread/libcpu/f1c100s
+
 # C sources
 SDK_DIR = \
 	bootloader \
@@ -40,15 +45,20 @@ SDK_DIR = \
 	third_party/rt-thread/src
 
 C_DIR = \
-	dsp/source/**/src \
 	hardware/src \
 	system/src \
-	user
-
-# ASM sources
-S_DIR = \
-	bootloader \
-	third_party/rt-thread/libcpu/f1c100s
+	user \
+	myresource/src/** \
+	third_party/cherryusb/class/hub \
+	third_party/cherryusb/class/msc \
+	third_party/cherryusb/core \
+	third_party/cherryusb/osal \
+	third_party/cherryusb/port \
+	third_party/fatfs \
+	third_party/lvgl/lvgl/** \
+	third_party/lvgl/lvgl/**/** \
+	third_party/lvgl/lvgl/**/**/** \
+	third_party/lvgl/lvgl/**/**/**/**
 
 # AS includes
 AS_INCLUDES = 
@@ -56,7 +66,6 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES = \
 -Ibootloader \
--Idsp/include \
 -If1cx00s_lib/inc \
 -Ihardware/inc \
 -Imyresource/inc \
@@ -93,13 +102,13 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).bin
 # build the application
 #######################################
 # list of objects
-SDK_SRC		:=	$(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
-S_SRC		:=	$(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
-C_SRC		:=	$(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
+S_SRC = $(foreach dir, $(S_DIR), $(wildcard $(dir)/*.S))
+SDK_SRC = $(foreach dir, $(SDK_DIR), $(wildcard $(dir)/*.c))
+C_SRC = $(foreach dir, $(C_DIR), $(wildcard $(dir)/*.c))
 
-SDK_OBJ		:=	$(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
-SDK_OBJ		+=	$(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
-OBJS		:=	$(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
+SDK_OBJ = $(patsubst %, $(BUILD_DIR)/%, $(S_SRC:.S=.o))
+SDK_OBJ += $(patsubst %, $(BUILD_DIR)/%, $(SDK_SRC:.c=.o))
+OBJS = $(patsubst %, $(BUILD_DIR)/%, $(C_SRC:.c=.o))
 
 SDK_OBJ_DIR 	= $(sort $(dir $(SDK_OBJ)))
 $(SDK_OBJ_DIR):
@@ -116,12 +125,12 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 
 $(BUILD_DIR)/$(TARGET).elf: $(BUILD_DIR)/libsdk.a $(OBJ_DIR) $(OBJS)
 	@echo Start link
-	$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/libsdk.a -o $@ -zmuldefs
+	@$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/libsdk.a -o $@ -zmuldefs
 	@echo Linking...
 	@$(SZ) $@
 
 build2: $(OBJS) $(SDK_OBJ) Makefile
-	$(CC) $(OBJS) $(SDK_OBJ) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET).elf
+	@$(CC) $(OBJS) $(SDK_OBJ) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET).elf
 	@echo Linking...
 	@$(SZ) $(BUILD_DIR)/$(TARGET).elf
 	
